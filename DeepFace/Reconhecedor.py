@@ -1,0 +1,40 @@
+import cv2
+from keras.preprocessing.image import save_img
+from keras.preprocessing.image import img_to_array
+from deepface import DeepFace
+
+import warnings
+warnings.filterwarnings("ignore")
+
+detectorFace = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+model = DeepFace.build_model("Facenet")
+
+largura, altura = 220, 220
+font = cv2.FONT_HERSHEY_COMPLEX_SMALL
+camera = cv2.VideoCapture(0)
+
+while (True):
+    conectado, imagem = camera.read()
+    imagemCinza = cv2.cvtColor(imagem, cv2.COLOR_BGR2GRAY)
+    facesDetectadas = detectorFace.detectMultiScale(imagemCinza, scaleFactor=1.5, minSize=(30,30))
+    for (x, y, l, a) in facesDetectadas:
+        imagemFace = cv2.resize(imagemCinza[y:y + a, x:x + l], (largura, altura))
+        photo=img_to_array(imagemFace)
+        save_img("temp.jpg",photo)
+        cv2.rectangle(imagem, (x, y), (x + l, y + a), (0,0,255), 2)
+       
+        nome = ""
+        if DeepFace.verify("fotos\Renato\Renato1.jpg", "temp.jpg",enforce_detection=False)["verified"]==True:
+            nome = 'Renato'
+        elif DeepFace.verify("fotos\Leticia\Leticia1.jpg", "temp.jpg",enforce_detection=False)["verified"]==True:
+            nome = 'Leticia'
+        else:
+            nome = 'Ze Mane'
+        cv2.putText(imagem, nome, (x,y +(a+30)), font, 2, (0,0,255))
+
+    cv2.imshow("Face", imagem)
+    if cv2.waitKey(1) == ord('q'):
+        break
+
+camera.release()
+cv2.destroyAllWindows()
